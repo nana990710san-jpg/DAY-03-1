@@ -80,10 +80,32 @@
       box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
     }
     .count {
-      text-align: right;
       font-size: 12px;
       color: var(--muted);
-      margin-top: 4px;
+    }
+    .review-tools {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .ai-btn {
+      height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--orange);
+      border-radius: 999px;
+      background: var(--orange-soft);
+      color: var(--orange-dark);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .ai-btn:hover { background: #FFE7D6; }
+    .ai-btn:disabled, .btn:disabled {
+      opacity: 0.6;
+      cursor: default;
     }
 
     /* 별점: 라디오 5개를 거꾸로 배치해 hover/선택 시 왼쪽 별까지 채움 */
@@ -243,7 +265,10 @@
       <div class="field">
         <label for="review">한줄평</label>
         <input type="text" id="review" maxlength="100" placeholder="예: 국물이 진하고 면이 쫄깃해요" autocomplete="off">
-        <div class="count"><span id="review-count">0</span>/100</div>
+        <div class="review-tools">
+          <button type="button" class="ai-btn" id="ai-btn">✨ AI 한줄평 추천</button>
+          <div class="count"><span id="review-count">0</span>/100</div>
+        </div>
       </div>
       <button type="submit" class="btn">추가</button>
       <p class="msg" id="msg" role="alert"></p>
@@ -420,6 +445,38 @@
       reviewCount.textContent = '0';
       await refresh();
       nameInput.focus();
+    });
+
+    const aiBtn = document.getElementById('ai-btn');
+    aiBtn.addEventListener('click', async () => {
+      msg.textContent = '';
+      const name = nameInput.value.trim();
+      if (!name) {
+        msg.textContent = 'AI 추천을 받으려면 식당 이름을 먼저 입력해 주세요.';
+        nameInput.focus();
+        return;
+      }
+      const checked = form.querySelector('input[name="rating"]:checked');
+
+      aiBtn.disabled = true;
+      aiBtn.textContent = '추천 중…';
+      const { data, error } = await db.functions.invoke('suggest-review', {
+        body: {
+          name,
+          menu: menuInput.value.trim(),
+          rating: checked ? Number(checked.value) : null,
+        },
+      });
+      aiBtn.disabled = false;
+      aiBtn.textContent = '✨ AI 한줄평 추천';
+
+      if (error || !data?.review) {
+        console.error(error);
+        msg.textContent = '추천을 가져오지 못했어요. 잠시 후 다시 눌러 주세요.';
+        return;
+      }
+      reviewInput.value = data.review.slice(0, LIMITS.review);
+      reviewCount.textContent = reviewInput.value.length;
     });
 
     reviewInput.addEventListener('input', () => {
