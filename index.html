@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>우리 동네 숨은 맛집</title>
+  <style>
+    :root {
+      --orange: #F97316;
+      --orange-dark: #EA580C;
+      --orange-soft: #FFF4EC;
+      --text: #1F2937;
+      --muted: #6B7280;
+      --line: #E5E7EB;
+      --bg: #FAF7F4;
+      --card: #FFFFFF;
+      --star-off: #D1D5DB;
+      --error: #DC2626;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+    h1 {
+      margin: 0 0 4px;
+      font-size: 26px;
+    }
+    h1 span { color: var(--orange); }
+    .sub {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+      padding: 18px;
+    }
+    form .field { margin-bottom: 14px; }
+    label, .label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .req { color: var(--orange); }
+    input[type="text"] {
+      width: 100%;
+      height: 44px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+    }
+    .count {
+      text-align: right;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* 별점: 라디오 5개를 거꾸로 배치해 hover/선택 시 왼쪽 별까지 채움 */
+    .stars {
+      display: inline-flex;
+      flex-direction: row-reverse;
+      gap: 2px;
+      border: 0;
+      padding: 0;
+      margin: 0;
+    }
+    .stars input {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+    }
+    .stars label {
+      font-size: 34px;
+      line-height: 1;
+      color: var(--star-off);
+      cursor: pointer;
+      margin: 0;
+      padding: 2px 3px;
+      font-weight: normal;
+    }
+    .stars input:checked ~ label,
+    .stars label:hover,
+    .stars label:hover ~ label {
+      color: var(--orange);
+    }
+    .stars input:focus-visible + label {
+      outline: 2px solid var(--orange);
+      border-radius: 6px;
+    }
+
+    .btn {
+      width: 100%;
+      height: 48px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--orange);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .btn:hover { background: var(--orange-dark); }
+    .msg {
+      min-height: 20px;
+      margin: 10px 0 0;
+      font-size: 14px;
+      color: var(--error);
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 32px 0 12px;
+    }
+    #list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+    .item-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .item-name {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 0;
+      word-break: break-all;
+    }
+    .item-stars {
+      color: var(--orange);
+      white-space: nowrap;
+      font-size: 16px;
+      letter-spacing: 1px;
+    }
+    .item-stars .off { color: var(--star-off); }
+    .item-menu {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 2px 10px;
+      background: var(--orange-soft);
+      color: var(--orange-dark);
+      border-radius: 999px;
+      font-size: 13px;
+      word-break: break-all;
+    }
+    .item-review {
+      margin: 10px 0 0;
+      word-break: break-all;
+    }
+    .item-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .del {
+      height: 36px;
+      min-width: 56px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .del:hover {
+      border-color: var(--error);
+      color: var(--error);
+    }
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 32px 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🍜 우리 동네 <span>숨은 맛집</span></h1>
+    <p class="sub">가 본 맛집을 기록하고 함께 봐요</p>
+
+    <form id="form" class="card" novalidate>
+      <div class="field">
+        <label for="name">식당 이름 <span class="req">*</span></label>
+        <input type="text" id="name" maxlength="30" placeholder="예: 골목 칼국수" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="menu">메뉴</label>
+        <input type="text" id="menu" maxlength="30" placeholder="예: 바지락 칼국수" autocomplete="off">
+      </div>
+      <div class="field">
+        <span class="label" id="rating-label">별점 <span class="req">*</span></span>
+        <fieldset class="stars" aria-labelledby="rating-label">
+          <input type="radio" name="rating" id="r5" value="5"><label for="r5" title="5점">★</label>
+          <input type="radio" name="rating" id="r4" value="4"><label for="r4" title="4점">★</label>
+          <input type="radio" name="rating" id="r3" value="3"><label for="r3" title="3점">★</label>
+          <input type="radio" name="rating" id="r2" value="2"><label for="r2" title="2점">★</label>
+          <input type="radio" name="rating" id="r1" value="1"><label for="r1" title="1점">★</label>
+        </fieldset>
+      </div>
+      <div class="field">
+        <label for="review">한줄평</label>
+        <input type="text" id="review" maxlength="100" placeholder="예: 국물이 진하고 면이 쫄깃해요" autocomplete="off">
+        <div class="count"><span id="review-count">0</span>/100</div>
+      </div>
+      <button type="submit" class="btn">추가</button>
+      <p class="msg" id="msg" role="alert"></p>
+    </form>
+
+    <h2>등록된 맛집</h2>
+    <ul id="list"></ul>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'restaurants';
+    const LIMITS = { name: 30, menu: 30, review: 100 };
+
+    const form = document.getElementById('form');
+    const nameInput = document.getElementById('name');
+    const menuInput = document.getElementById('menu');
+    const reviewInput = document.getElementById('review');
+    const reviewCount = document.getElementById('review-count');
+    const msg = document.getElementById('msg');
+    const list = document.getElementById('list');
+
+    function load() {
+      try {
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function save(items) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text != null) node.textContent = text;
+      return node;
+    }
+
+    function render() {
+      const items = load().sort((a, b) => b.created_at.localeCompare(a.created_at));
+      list.replaceChildren();
+
+      if (items.length === 0) {
+        list.append(el('li', 'card empty', '아직 등록된 맛집이 없어요. 첫 맛집을 기록해 보세요!'));
+        return;
+      }
+
+      for (const item of items) {
+        const li = el('li', 'card');
+
+        const head = el('div', 'item-head');
+        head.append(el('p', 'item-name', item.name));
+        const stars = el('span', 'item-stars');
+        stars.setAttribute('aria-label', `별점 ${item.rating}점`);
+        stars.append('★'.repeat(item.rating));
+        stars.append(el('span', 'off', '★'.repeat(5 - item.rating)));
+        head.append(stars);
+        li.append(head);
+
+        if (item.menu) li.append(el('span', 'item-menu', item.menu));
+        if (item.review) li.append(el('p', 'item-review', `“${item.review}”`));
+
+        const foot = el('div', 'item-foot');
+        foot.append(el('span', null, formatDate(item.created_at)));
+        const del = el('button', 'del', '삭제');
+        del.type = 'button';
+        del.addEventListener('click', () => removeItem(item.id, item.name));
+        foot.append(del);
+        li.append(foot);
+
+        list.append(li);
+      }
+    }
+
+    function removeItem(id, name) {
+      if (!confirm(`'${name}' 기록을 삭제할까요?`)) return;
+      save(load().filter(item => item.id !== id));
+      render();
+    }
+
+    function newId() {
+      return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      msg.textContent = '';
+
+      const name = nameInput.value.trim();
+      const menu = menuInput.value.trim();
+      const review = reviewInput.value.trim();
+      const checked = form.querySelector('input[name="rating"]:checked');
+      const rating = checked ? Number(checked.value) : 0;
+
+      if (!name) {
+        msg.textContent = '식당 이름을 입력해 주세요.';
+        nameInput.focus();
+        return;
+      }
+      if (name.length > LIMITS.name || menu.length > LIMITS.menu || review.length > LIMITS.review) {
+        msg.textContent = '글자 수가 너무 많아요.';
+        return;
+      }
+      if (!(rating >= 1 && rating <= 5)) {
+        msg.textContent = '별점을 골라 주세요.';
+        return;
+      }
+
+      const items = load();
+      items.push({
+        id: newId(),
+        name,
+        menu: menu || null,
+        rating,
+        review: review || null,
+        created_at: new Date().toISOString(),
+      });
+      save(items);
+
+      form.reset();
+      reviewCount.textContent = '0';
+      render();
+      nameInput.focus();
+    });
+
+    reviewInput.addEventListener('input', () => {
+      reviewCount.textContent = reviewInput.value.length;
+    });
+
+    render();
+  </script>
+</body>
+</html>
