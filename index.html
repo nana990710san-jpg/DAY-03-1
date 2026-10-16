@@ -40,6 +40,15 @@
       color: var(--muted);
       font-size: 14px;
     }
+    .note {
+      margin: 0 0 16px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--orange-soft);
+      color: var(--orange-dark);
+      font-size: 13px;
+    }
+    .note[hidden] { display: none; }
     .card {
       background: var(--card);
       border-radius: 16px;
@@ -210,6 +219,7 @@
   <div class="wrap">
     <h1>🍜 우리 동네 <span>숨은 맛집</span></h1>
     <p class="sub">가 본 맛집을 기록하고 함께 봐요</p>
+    <p class="note" id="notice" role="status" hidden></p>
 
     <form id="form" class="card" novalidate>
       <div class="field">
@@ -243,9 +253,15 @@
     <ul id="list"></ul>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
   <script>
-    const STORAGE_KEY = 'restaurants';
+    const SUPABASE_URL = 'https://lyiohwpsobsywrycaelc.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_KTBSa_LsTZwtp4jidkcweA_tPZzd_H7';
     const LIMITS = { name: 30, menu: 30, review: 100 };
+
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let myId = null;
+    let items = [];
 
     const form = document.getElementById('form');
     const nameInput = document.getElementById('name');
@@ -254,18 +270,41 @@
     const reviewCount = document.getElementById('review-count');
     const msg = document.getElementById('msg');
     const list = document.getElementById('list');
+    const submitBtn = form.querySelector('button[type="submit"]');
 
-    function load() {
-      try {
-        const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        return Array.isArray(data) ? data : [];
-      } catch {
-        return [];
-      }
+    function showNotice(text) {
+      const note = document.getElementById('notice');
+      note.textContent = text;
+      note.hidden = !text;
     }
 
-    function save(items) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    // 로그인 화면 없이, 이 브라우저용 익명 사용자를 만들거나 기존 것을 이어 씀
+    async function ensureUser() {
+      const { data: { session } } = await db.auth.getSession();
+      if (session) return session.user.id;
+      const { data, error } = await db.auth.signInAnonymously();
+      if (error) throw error;
+      return data.user.id;
+    }
+
+    async function load() {
+      const { data, error } = await db
+        .from('restaurants')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      items = data;
+    }
+
+    async function refresh() {
+      try {
+        await load();
+        showNotice(myId ? '' : '연결하지 못했어요. 목록은 볼 수 있지만 추가·삭제는 안 돼요.');
+      } catch (err) {
+        console.error(err);
+        showNotice('목록을 불러오지 못했어요. 잠시 후 새로고침해 주세요.');
+      }
+      render();
     }
 
     function formatDate(iso) {
@@ -282,7 +321,6 @@
     }
 
     function render() {
-      const items = load().sort((a, b) => b.created_at.localeCompare(a.created_at));
       list.replaceChildren();
 
       if (items.length === 0) {
@@ -307,27 +345,32 @@
 
         const foot = el('div', 'item-foot');
         foot.append(el('span', null, formatDate(item.created_at)));
-        const del = el('button', 'del', '삭제');
-        del.type = 'button';
-        del.addEventListener('click', () => removeItem(item.id, item.name));
-        foot.append(del);
+        if (item.user_id === myId) {
+          const del = el('button', 'del', '삭제');
+          del.type = 'button';
+          del.addEventListener('click', () => removeItem(item.id, item.name, del));
+          foot.append(del);
+        }
         li.append(foot);
 
         list.append(li);
       }
     }
 
-    function removeItem(id, name) {
+    async function removeItem(id, name, button) {
       if (!confirm(`'${name}' 기록을 삭제할까요?`)) return;
-      save(load().filter(item => item.id !== id));
-      render();
+      button.disabled = true;
+      const { error } = await db.from('restaurants').delete().eq('id', id);
+      if (error) {
+        console.error(error);
+        alert('삭제하지 못했어요. 다시 시도해 주세요.');
+        button.disabled = false;
+        return;
+      }
+      await refresh();
     }
 
-    function newId() {
-      return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    }
-
-    form.addEventListener('submit', e => {
+    form.addEventListener('submit', async e => {
       e.preventDefault();
       msg.textContent = '';
 
@@ -351,20 +394,31 @@
         return;
       }
 
-      const items = load();
-      items.push({
-        id: newId(),
+      if (!myId) {
+        msg.textContent = '아직 연결 중이에요. 잠시 후 다시 눌러 주세요.';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '추가 중…';
+      const { error } = await db.from('restaurants').insert({
         name,
         menu: menu || null,
         rating,
         review: review || null,
-        created_at: new Date().toISOString(),
       });
-      save(items);
+      submitBtn.disabled = false;
+      submitBtn.textContent = '추가';
+
+      if (error) {
+        console.error(error);
+        msg.textContent = '저장하지 못했어요. 다시 시도해 주세요.';
+        return;
+      }
 
       form.reset();
       reviewCount.textContent = '0';
-      render();
+      await refresh();
       nameInput.focus();
     });
 
@@ -372,7 +426,16 @@
       reviewCount.textContent = reviewInput.value.length;
     });
 
-    render();
+    (async () => {
+      list.replaceChildren(el('li', 'card empty', '불러오는 중…'));
+      try {
+        myId = await ensureUser();
+      } catch (err) {
+        console.error(err);
+        showNotice('연결하지 못했어요. 목록은 볼 수 있지만 추가·삭제는 안 돼요.');
+      }
+      await refresh();
+    })();
   </script>
 </body>
 </html>
