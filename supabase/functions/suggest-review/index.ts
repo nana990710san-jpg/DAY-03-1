@@ -2,6 +2,7 @@
 // 1) 한줄평 추천: { name, menu, rating } → { review, others } (한국어 한 문장, 40자 이내)
 //    others는 이 앱에 실제로 등록된 다른 사람들의 같은 메뉴·식당 한줄평(최대 3개)
 // 2) 사장님 답글: { mode: "reply", id } → 해당 기록의 owner_reply를 채우고 { reply } (60자 이내)
+// 두 기능 모두 이메일로 로그인한 회원의 토큰(Authorization)이 있어야 한다.
 // OPENROUTER_API_KEY는 Supabase 프로젝트 Secrets에서 읽는다.
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
@@ -232,6 +233,11 @@ Deno.serve(async (req) => {
   } catch {
     return json({ error: "잘못된 요청이에요." }, 400);
   }
+
+  // AI 기능은 이메일로 로그인한 회원만 (익명 세션·비로그인은 거절)
+  const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  const { data: auth } = token ? await adminClient().auth.getUser(token) : { data: { user: null } };
+  if (!auth.user || auth.user.is_anonymous) return json({ error: "로그인해야 쓸 수 있어요." }, 401);
 
   try {
     return body.mode === "reply" ? await ownerReply(body) : await suggestReview(body);

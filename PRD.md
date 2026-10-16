@@ -56,10 +56,14 @@
    - 목록 위 "맛집 지도"에 위치가 있는 모든 맛집이 주황 핀으로 보인다. 핀을 누르면 이름·별점·메뉴·한줄평이 뜬다.
    - 위치가 있는 카드에는 [📍 지도에서 보기] 버튼이 있어, 누르면 맛집 지도에서 그 핀으로 이동한다.
    - 지도는 키가 필요 없는 무료 OpenStreetMap + Leaflet(CDN)을 쓴다. 주소 검색은 하지 않는다.
+8. **로그인·회원가입 (이메일 + 비밀번호)**
+   - `index.html#login` 화면에서 [로그인] / [회원가입] 탭을 오간다. 회원가입은 비밀번호 확인 칸이 있고, 확인 메일의 링크를 눌러야 끝난다.
+   - 로그인하지 않은 방문자는 **보기만** 한다(지도·리뷰). 입력 폼 대신 "로그인해 주세요" 카드가 보인다.
+   - 로그인한 회원만 추가·삭제·AI 한줄평 추천을 쓸 수 있다. 상단에 내 이메일과 [로그아웃]이 보인다.
 
 ### 3.2 하지 않을 것
 
-- 로그인 / 회원가입
+- 소셜 로그인, 비밀번호 찾기
 - 기록 수정
 - 사진 업로드
 - 검색
@@ -130,20 +134,19 @@
 ### 5.2 권한 (RLS)
 
 - RLS를 **켠다**.
-- 로그인 화면 없이 "누가 올렸는지"를 구분하기 위해 Supabase **익명 로그인**(`signInAnonymously()`)을 쓴다.
-  - 페이지를 열면 화면에 보이지 않게 자동으로 익명 사용자가 만들어지고, 그 브라우저에 유지된다.
-  - Supabase 대시보드 Authentication 설정에서 Anonymous sign-ins를 켜야 한다.
-- 정책 (`authenticated` 역할, 익명 사용자 포함):
-  - **보기(select):** 누구나 모든 기록
-  - **추가(insert):** 누구나, 단 `user_id = auth.uid()`이고 `owner_reply`가 비어 있을 때만 (남의 이름으로 올리기·답글 직접 쓰기 불가)
-  - **삭제(delete):** **자기가 올린 것만** (`user_id = auth.uid()`)
+- Supabase Auth의 **이메일 + 비밀번호** 로그인을 쓴다. 회원가입 확인 메일이 켜져 있다.
+  - 확인 메일의 링크가 배포 주소로 돌아오도록, Supabase 대시보드 Authentication → URL Configuration에 Site URL과 Redirect URL(배포 주소)을 넣어야 한다.
+- 정책:
+  - **보기(select):** 누구나 모든 기록 (`anon`, `authenticated`)
+  - **추가(insert):** 이메일 회원만, `user_id = auth.uid()`이고 `owner_reply`가 비어 있을 때만 (익명 세션 불가, 남의 이름으로 올리기·답글 직접 쓰기 불가)
+  - **삭제(delete):** 이메일 회원이 **자기가 올린 것만**
 - 수정(update) 정책은 만들지 않는다 → 수정 불가.
 - 프론트엔드에는 Supabase 프로젝트 URL과 **anon(publishable) 키만** 넣는다. service_role 키는 절대 넣지 않는다.
-- 참고: "나"는 브라우저 단위다. 다른 기기·다른 브라우저에서 열거나 브라우저 데이터를 지우면 새 익명 사용자가 되어, 예전에 올린 기록은 더 이상 지울 수 없다.
+- 참고: 예전 익명 로그인 시절에 올린 기록은 그대로 보이지만, 올린 사람이 회원이 아니므로 더는 지울 수 없다.
 
 ### 5.3 AI 한줄평 Edge Function
 
-- 함수 1개 (이름 예: `suggest-review`), **`verify_jwt` 끔** (로그인 없이 호출).
+- 함수 1개 (이름 예: `suggest-review`), **`verify_jwt` 끔**. 대신 함수 안에서 Authorization 토큰을 확인해 이메일 회원이 아니면 401을 돌려준다.
 - 입력: `{ name, menu, rating }` (JSON, POST)
 - 출력: `{ review: "40자 이내 한 문장", others: [{ name, menu, rating, review }] }` (others는 실제 등록된 다른 사람 한줄평, 최대 3개. 추천에 실패해도 others는 돌려준다)
 - OpenRouter 키는 Supabase 프로젝트 Secrets의 `OPENROUTER_API_KEY`에서 `Deno.env.get()`으로 읽는다. **코드·저장소에 키를 넣지 않는다.**

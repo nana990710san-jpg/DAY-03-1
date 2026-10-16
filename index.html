@@ -156,6 +156,73 @@
       letter-spacing: -0.01em;
     }
     h1 span { color: var(--fg-brand); }
+    .home-link { color: inherit; text-decoration: none; }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .account { flex-shrink: 0; padding-top: 2px; }
+    .account [hidden] { display: none; }
+    .chip-btn.login-link {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      background: var(--bg-brand-weak);
+      color: var(--fg-brand-contrast);
+    }
+    .chip-btn.login-link:hover { background: var(--bg-brand-weak-pressed); }
+    .me { display: inline-flex; align-items: center; gap: 8px; }
+    .me-email {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      color: var(--fg-neutral-muted);
+    }
+    @media (max-width: 420px) { .me-email { display: none; } }
+
+    /* 로그인·회원가입 화면 */
+    .auth-view[hidden], .layout[hidden], .login-prompt[hidden], #form[hidden], .field[hidden] { display: none; }
+    .auth-card { max-width: 420px; margin: 8px auto 0; }
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      padding: 4px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      background: var(--bg-neutral-weak);
+    }
+    .auth-tab {
+      height: 40px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--fg-neutral-subtle);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .auth-tab[aria-selected="true"] {
+      background: var(--bg-layer-default);
+      color: var(--fg-neutral);
+      box-shadow: var(--shadow-s1);
+    }
+    .auth-tab:focus-visible { outline: 2px solid var(--stroke-focus-ring); outline-offset: 2px; }
+    #auth-msg.ok { color: var(--fg-brand-contrast); }
+    .auth-foot { margin: 12px 0 0; text-align: center; font-size: 14px; }
+    .auth-foot a { color: var(--fg-neutral-subtle); }
+    .login-prompt-title { margin: 0 0 6px; font-size: 16px; line-height: 22px; font-weight: 700; }
+    .login-prompt-text { margin: 0 0 16px; font-size: 14px; line-height: 20px; color: var(--fg-neutral-subtle); }
+    .btn-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
     .sub {
       margin: 6px 0 20px;
       color: var(--fg-neutral-subtle);
@@ -192,7 +259,7 @@
       color: var(--fg-neutral);
     }
     .req { color: var(--fg-brand); margin-left: 2px; }
-    input[type="text"] {
+    input[type="text"], input[type="email"], input[type="password"] {
       width: 100%;
       height: 48px;
       padding: 0 14px;
@@ -204,8 +271,8 @@
       font-family: inherit;
       transition: border-color 150ms var(--ease), box-shadow 150ms var(--ease);
     }
-    input[type="text"]::placeholder { color: var(--fg-placeholder); }
-    input[type="text"]:focus {
+    input::placeholder { color: var(--fg-placeholder); }
+    input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
       outline: none;
       border-color: var(--fg-neutral);
       box-shadow: inset 0 0 0 1px var(--fg-neutral);
@@ -540,12 +607,55 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>🍜 우리 동네 <span>숨은 맛집</span></h1>
-    <p class="sub">가 본 맛집을 기록하고 함께 봐요</p>
+    <header class="top">
+      <div>
+        <h1><a href="#" class="home-link">🍜 우리 동네 <span>숨은 맛집</span></a></h1>
+        <p class="sub">가 본 맛집을 기록하고 함께 봐요</p>
+      </div>
+      <div class="account" id="account">
+        <a href="#login" class="chip-btn login-link" id="login-link">로그인</a>
+        <span class="me" id="me" hidden>
+          <span class="me-email" id="me-email"></span>
+          <button type="button" class="chip-btn" id="logout-btn">로그아웃</button>
+        </span>
+      </div>
+    </header>
     <p class="note" id="notice" role="status" hidden></p>
 
-    <div class="layout">
+    <!-- 로그인·회원가입 화면 (#login) -->
+    <section class="auth-view" id="auth-view" hidden>
+      <div class="card auth-card">
+        <div class="auth-tabs" role="tablist">
+          <button type="button" class="auth-tab" id="tab-login" role="tab" aria-selected="true">로그인</button>
+          <button type="button" class="auth-tab" id="tab-signup" role="tab" aria-selected="false">회원가입</button>
+        </div>
+        <form id="auth-form" novalidate>
+          <div class="field">
+            <label for="auth-email">이메일</label>
+            <input type="email" id="auth-email" autocomplete="email" placeholder="you@example.com" required>
+          </div>
+          <div class="field">
+            <label for="auth-password">비밀번호</label>
+            <input type="password" id="auth-password" autocomplete="current-password" placeholder="6자 이상" minlength="6" required>
+          </div>
+          <div class="field" id="confirm-field" hidden>
+            <label for="auth-password2">비밀번호 확인</label>
+            <input type="password" id="auth-password2" autocomplete="new-password" placeholder="한 번 더 입력해 주세요">
+          </div>
+          <button type="submit" class="btn" id="auth-submit">로그인</button>
+          <p class="msg" id="auth-msg" role="alert"></p>
+        </form>
+        <p class="auth-foot"><a href="#">← 로그인 없이 맛집 구경하기</a></p>
+      </div>
+    </section>
+
+    <div class="layout" id="main-view">
     <div class="col-form">
+    <div class="card login-prompt" id="login-prompt" hidden>
+      <p class="login-prompt-title">맛집을 기록하려면 로그인해 주세요 🙌</p>
+      <p class="login-prompt-text">로그인하지 않아도 지도와 리뷰는 마음껏 볼 수 있어요. 기록·삭제·AI 추천은 회원만 쓸 수 있어요.</p>
+      <a href="#login" class="btn btn-link">로그인 / 회원가입</a>
+    </div>
     <form id="form" class="card" novalidate>
       <div class="field">
         <label for="name">식당 이름 <span class="req">*</span></label>
@@ -633,14 +743,118 @@
       note.hidden = !text;
     }
 
-    // 로그인 화면 없이, 이 브라우저용 익명 사용자를 만들거나 기존 것을 이어 씀
-    async function ensureUser() {
-      const { data: { session } } = await db.auth.getSession();
-      if (session) return session.user.id;
-      const { data, error } = await db.auth.signInAnonymously();
-      if (error) throw error;
-      return data.user.id;
+    // ── 로그인 (이메일 + 비밀번호) ──
+    // 이메일로 로그인한 회원만 추가·삭제·AI를 쓸 수 있고, 그 밖의 방문자는 보기만 한다
+    let myEmail = null;
+
+    function setUser(user) {
+      const member = user && !user.is_anonymous ? user : null;
+      myId = member ? member.id : null;
+      myEmail = member ? member.email : null;
+      document.getElementById('login-link').hidden = !!member;
+      document.getElementById('me').hidden = !member;
+      document.getElementById('me-email').textContent = myEmail ?? '';
+      document.getElementById('login-prompt').hidden = !!member;
+      form.hidden = !member;
     }
+
+    // 주소가 #login 이면 로그인 화면, 아니면 맛집 화면
+    function route() {
+      const onLogin = location.hash === '#login';
+      document.getElementById('auth-view').hidden = !onLogin;
+      document.getElementById('main-view').hidden = onLogin;
+      document.getElementById('account').style.visibility = onLogin ? 'hidden' : '';
+      if (onLogin && myId) {
+        location.hash = '';
+        return;
+      }
+      if (onLogin) {
+        authMsg.textContent = '';
+        authEmail.focus();
+      } else {
+        // 숨겨져 있던 지도가 다시 보이면 크기를 다시 잡아야 타일이 제대로 그려진다
+        setTimeout(() => { pickMap.invalidateSize(); allMap.invalidateSize(); }, 0);
+      }
+    }
+
+    const authForm = document.getElementById('auth-form');
+    const authEmail = document.getElementById('auth-email');
+    const authPassword = document.getElementById('auth-password');
+    const authPassword2 = document.getElementById('auth-password2');
+    const authSubmit = document.getElementById('auth-submit');
+    const authMsg = document.getElementById('auth-msg');
+    let authMode = 'login';
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      document.getElementById('tab-login').setAttribute('aria-selected', String(mode === 'login'));
+      document.getElementById('tab-signup').setAttribute('aria-selected', String(mode === 'signup'));
+      document.getElementById('confirm-field').hidden = mode !== 'signup';
+      authPassword.autocomplete = mode === 'signup' ? 'new-password' : 'current-password';
+      authSubmit.textContent = mode === 'signup' ? '회원가입' : '로그인';
+      authMsg.textContent = '';
+      authMsg.classList.remove('ok');
+    }
+    document.getElementById('tab-login').addEventListener('click', () => setAuthMode('login'));
+    document.getElementById('tab-signup').addEventListener('click', () => setAuthMode('signup'));
+
+    function authErrorText(error) {
+      const m = (error?.message ?? '').toLowerCase();
+      if (m.includes('invalid login credentials')) return '이메일 또는 비밀번호가 맞지 않아요.';
+      if (m.includes('email not confirmed')) return '아직 이메일 확인 전이에요. 받은 메일의 링크를 먼저 눌러 주세요.';
+      if (m.includes('already registered') || m.includes('already been registered')) return '이미 가입된 이메일이에요. 로그인해 주세요.';
+      if (m.includes('password')) return '비밀번호는 6자 이상으로 해 주세요.';
+      if (m.includes('rate limit') || m.includes('too many')) return '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.';
+      if (m.includes('email')) return '이메일 주소를 다시 확인해 주세요.';
+      return '잠시 문제가 생겼어요. 다시 시도해 주세요.';
+    }
+
+    authForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      authMsg.textContent = '';
+      authMsg.classList.remove('ok');
+      const email = authEmail.value.trim();
+      const password = authPassword.value;
+      if (!/^\S+@\S+\.\S+$/.test(email)) {
+        authMsg.textContent = '이메일 주소를 정확히 입력해 주세요.';
+        authEmail.focus();
+        return;
+      }
+      if (password.length < 6) {
+        authMsg.textContent = '비밀번호는 6자 이상으로 해 주세요.';
+        authPassword.focus();
+        return;
+      }
+      if (authMode === 'signup' && password !== authPassword2.value) {
+        authMsg.textContent = '비밀번호 확인이 달라요. 다시 입력해 주세요.';
+        authPassword2.focus();
+        return;
+      }
+
+      authSubmit.disabled = true;
+      const result = authMode === 'signup'
+        ? await db.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } })
+        : await db.auth.signInWithPassword({ email, password });
+      authSubmit.disabled = false;
+
+      if (result.error) {
+        authMsg.textContent = authErrorText(result.error);
+        return;
+      }
+      authForm.reset();
+      if (authMode === 'signup' && !result.data.session) {
+        // 이메일 확인이 켜져 있으면 메일의 링크를 눌러야 가입이 끝난다
+        setAuthMode('login');
+        authMsg.classList.add('ok');
+        authMsg.textContent = `${email}로 확인 메일을 보냈어요! 메일의 링크를 누른 뒤 로그인해 주세요.`;
+        return;
+      }
+      location.hash = '';
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await db.auth.signOut();
+    });
 
     async function load() {
       const { data, error } = await db
@@ -654,7 +868,7 @@
     async function refresh() {
       try {
         await load();
-        showNotice(myId ? '' : '연결하지 못했어요. 목록은 볼 수 있지만 추가·삭제는 안 돼요.');
+        showNotice('');
       } catch (err) {
         console.error(err);
         showNotice('목록을 불러오지 못했어요. 잠시 후 새로고침해 주세요.');
@@ -893,7 +1107,7 @@
       }
 
       if (!myId) {
-        msg.textContent = '아직 연결 중이에요. 잠시 후 다시 눌러 주세요.';
+        msg.textContent = '로그인해야 맛집을 기록할 수 있어요.';
         return;
       }
 
@@ -994,14 +1208,24 @@
 
     (async () => {
       list.replaceChildren(el('li', 'card empty', '불러오는 중…'));
-      try {
-        myId = await ensureUser();
-      } catch (err) {
-        console.error(err);
-        showNotice('연결하지 못했어요. 목록은 볼 수 있지만 추가·삭제는 안 돼요.');
-      }
+      const { data: { session } } = await db.auth.getSession();
+      // 예전 버전이 만든 익명 세션은 회원이 아니므로 정리한다
+      if (session?.user?.is_anonymous) await db.auth.signOut({ scope: 'local' });
+      setUser(session?.user?.is_anonymous ? null : session?.user);
+      route();
       await refresh();
+
+      // 로그인·로그아웃·이메일 확인 링크로 돌아왔을 때 화면을 맞춘다
+      db.auth.onAuthStateChange((event, newSession) => {
+        const before = myId;
+        setUser(newSession?.user);
+        if (before !== myId) {
+          route();
+          render();
+        }
+      });
     })();
+    window.addEventListener('hashchange', route);
   </script>
 </body>
 </html>
