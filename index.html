@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>우리 동네 숨은 맛집</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
   <style>
     /* 디자인 토큰: 팔레트 → 역할. 다크 모드는 역할이 아니라 팔레트 값을 바꾼다 */
     :root {
@@ -118,6 +119,34 @@
       padding: 24px 16px 56px;
     }
 
+    /* 반응형: 휴대폰·태블릿은 한 줄로 쌓고, PC(960px 이상)는 왼쪽 입력 폼 / 오른쪽 위 지도·아래 리뷰 */
+    @media (min-width: 960px) {
+      .wrap {
+        max-width: 1200px;
+        padding: 32px 32px 64px;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(340px, 400px) 1fr;
+        gap: 24px;
+        align-items: start;
+      }
+      /* 오른쪽을 스크롤해도 입력 폼은 화면에 붙어 있게 */
+      .col-form {
+        position: sticky;
+        top: 24px;
+      }
+      .col-side h2 { margin-top: 0; }
+      .sec-list { margin-top: 32px; }
+      .map-all { height: 420px; }
+      .map-pick { height: 200px; }
+      #list { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+    }
+    @media (min-width: 640px) and (max-width: 959px) {
+      .wrap { max-width: 720px; padding: 32px 24px 56px; }
+      .map-all { height: 360px; }
+    }
+
     /* 상단 제목 */
     h1 {
       margin: 0;
@@ -223,6 +252,106 @@
       font-size: 14px;
     }
     .ai-btn:hover { background: var(--bg-brand-weak-pressed); }
+
+    /* 다른 고객님들의 의견: 이 앱에 실제로 등록된 같은 메뉴·식당 한줄평 */
+    .others {
+      margin-top: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--bg-layer-fill);
+      box-shadow: inset 0 0 0 1px var(--stroke-neutral-muted);
+    }
+    .others[hidden] { display: none; }
+    .others-title {
+      margin: 0 0 6px;
+      font-size: 13px;
+      line-height: 18px;
+      font-weight: 700;
+      color: var(--fg-brand-contrast);
+    }
+    .others-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 6px;
+    }
+    .others-list li {
+      font-size: 13px;
+      line-height: 18px;
+      color: var(--fg-neutral-muted);
+      word-break: break-all;
+    }
+    .others-list .o-stars { color: var(--fg-brand); margin-right: 4px; }
+    .others-list .o-where { color: var(--fg-neutral-subtle); font-size: 12px; }
+    .others-empty { color: var(--fg-neutral-subtle); }
+
+    /* 지도: 입력 폼의 위치 찍기 지도 + 전체 맛집 지도 */
+    .map {
+      position: relative;
+      z-index: 0;
+      height: 220px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--bg-layer-fill);
+      box-shadow: inset 0 0 0 1px var(--stroke-neutral-muted);
+    }
+    .map-all {
+      height: 320px;
+      border-radius: 16px;
+      box-shadow: var(--shadow-s1);
+    }
+    .map .leaflet-container { font-family: var(--font); }
+    .loc-help {
+      margin: 0 0 8px;
+      font-size: 13px;
+      line-height: 18px;
+      color: var(--fg-neutral-subtle);
+    }
+    .loc-help.set { color: var(--fg-brand-contrast); font-weight: 700; }
+    .loc-tools {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .chip-btn {
+      height: 32px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 9999px;
+      background: var(--bg-neutral-weak);
+      color: var(--fg-neutral);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 150ms var(--ease), transform 150ms cubic-bezier(0, 0, 0.15, 1);
+    }
+    .chip-btn:hover { background: var(--bg-neutral-weak-pressed); }
+    .chip-btn:active { transform: scale(var(--scale-pressed)); }
+    .chip-btn:focus-visible { outline: 2px solid var(--stroke-focus-ring); outline-offset: 2px; }
+    .chip-btn[hidden] { display: none; }
+    .map-empty {
+      margin: 8px 0 0;
+      font-size: 13px;
+      line-height: 18px;
+      color: var(--fg-neutral-subtle);
+    }
+    .map-empty[hidden] { display: none; }
+    /* 주황 물방울 핀 */
+    .pin-wrap { background: none; border: 0; }
+    .pin {
+      display: block;
+      width: 26px;
+      height: 26px;
+      border: 3px solid #fff;
+      border-radius: 50% 50% 50% 0;
+      background: var(--bg-brand-solid);
+      transform: rotate(-45deg);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+    .pop strong { display: block; font-size: 14px; }
+    .pop .pop-stars { color: #ff6600; font-size: 12px; }
+    .pop .pop-text { margin-top: 4px; font-size: 13px; color: #555d6d; }
 
     /* 별점: 라디오 5개를 거꾸로 배치해 hover/선택 시 왼쪽 별까지 채움 */
     .stars {
@@ -395,6 +524,11 @@
       font-size: 13px;
     }
     .del:hover { background: var(--bg-neutral-weak-pressed); }
+    .foot-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
     .empty {
       text-align: center;
       color: var(--fg-neutral-subtle);
@@ -410,6 +544,8 @@
     <p class="sub">가 본 맛집을 기록하고 함께 봐요</p>
     <p class="note" id="notice" role="status" hidden></p>
 
+    <div class="layout">
+    <div class="col-form">
     <form id="form" class="card" novalidate>
       <div class="field">
         <label for="name">식당 이름 <span class="req">*</span></label>
@@ -436,15 +572,42 @@
           <button type="button" class="ai-btn" id="ai-btn">✨ AI 한줄평 추천</button>
           <div class="count"><span id="review-count">0</span>/100</div>
         </div>
+        <div class="others" id="others" hidden>
+          <p class="others-title">💬 다른 고객님들의 의견이에요!</p>
+          <ul class="others-list" id="others-list"></ul>
+        </div>
+      </div>
+      <div class="field">
+        <span class="label" id="loc-label">위치</span>
+        <p class="loc-help" id="loc-help">지도를 눌러 맛집 위치를 찍어 주세요 (선택)</p>
+        <div class="map map-pick" id="pick-map" role="application" aria-labelledby="loc-label"></div>
+        <div class="loc-tools">
+          <button type="button" class="chip-btn" id="loc-me">📍 내 위치로</button>
+          <button type="button" class="chip-btn" id="loc-clear" hidden>위치 지우기</button>
+        </div>
       </div>
       <button type="submit" class="btn">추가</button>
       <p class="msg" id="msg" role="alert"></p>
     </form>
 
-    <h2>등록된 맛집</h2>
-    <ul id="list"></ul>
+    </div>
+
+    <!-- PC: 오른쪽 위 지도, 오른쪽 아래 리뷰 / 휴대폰: 폼 아래로 차례대로 -->
+    <div class="col-side">
+      <section class="sec-map">
+        <h2 id="map-title">맛집 지도</h2>
+        <div class="map map-all" id="all-map" role="application" aria-labelledby="map-title"></div>
+        <p class="map-empty" id="map-empty">위치를 찍은 맛집이 여기 핀으로 보여요.</p>
+      </section>
+      <section class="sec-list">
+        <h2>등록된 맛집</h2>
+        <ul id="list"></ul>
+      </section>
+    </div>
+    </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
   <script>
     const SUPABASE_URL = 'https://lyiohwpsobsywrycaelc.supabase.co';
@@ -513,6 +676,7 @@
     }
 
     function render() {
+      renderMap();
       list.replaceChildren();
 
       if (items.length === 0) {
@@ -539,16 +703,116 @@
 
         const foot = el('div', 'item-foot');
         foot.append(el('span', null, formatDate(item.created_at)));
+        const actions = el('div', 'foot-actions');
+        if (item.lat != null && item.lng != null) {
+          const mapBtn = el('button', 'chip-btn', '📍 지도에서 보기');
+          mapBtn.type = 'button';
+          mapBtn.addEventListener('click', () => showOnMap(item.id));
+          actions.append(mapBtn);
+        }
         if (item.user_id === myId) {
           const del = el('button', 'del', '삭제');
           del.type = 'button';
           del.addEventListener('click', () => removeItem(item.id, item.name, del));
-          foot.append(del);
+          actions.append(del);
         }
+        foot.append(actions);
         li.append(foot);
 
         list.append(li);
       }
+    }
+
+    // ── 지도 (OpenStreetMap + Leaflet, 키 없이 무료) ──
+    const DEFAULT_CENTER = [37.5665, 126.978]; // 위치가 하나도 없을 때: 서울시청
+    const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
+    function pinIcon() {
+      return L.divIcon({
+        className: 'pin-wrap',
+        html: '<span class="pin"></span>',
+        iconSize: [26, 26],
+        iconAnchor: [13, 30],
+        popupAnchor: [0, -28],
+      });
+    }
+
+    function makeMap(id, zoom) {
+      const map = L.map(id, { scrollWheelZoom: false }).setView(DEFAULT_CENTER, zoom);
+      L.tileLayer(TILE_URL, { maxZoom: 19, attribution: TILE_ATTR }).addTo(map);
+      return map;
+    }
+
+    // 입력 폼: 지도를 눌러 위치 찍기
+    const pickMap = makeMap('pick-map', 14);
+    const locHelp = document.getElementById('loc-help');
+    const locClear = document.getElementById('loc-clear');
+    let picked = null;
+    let pickMarker = null;
+
+    function setPicked(latlng) {
+      picked = latlng ? { lat: Number(latlng.lat.toFixed(6)), lng: Number(latlng.lng.toFixed(6)) } : null;
+      if (pickMarker) pickMarker.remove();
+      pickMarker = picked ? L.marker(picked, { icon: pinIcon() }).addTo(pickMap) : null;
+      locHelp.textContent = picked ? '📍 위치를 찍었어요! 다시 누르면 옮길 수 있어요.' : '지도를 눌러 맛집 위치를 찍어 주세요 (선택)';
+      locHelp.classList.toggle('set', !!picked);
+      locClear.hidden = !picked;
+    }
+
+    pickMap.on('click', e => setPicked(e.latlng));
+    locClear.addEventListener('click', () => setPicked(null));
+    document.getElementById('loc-me').addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        msg.textContent = '이 브라우저에서는 내 위치를 쓸 수 없어요. 지도를 직접 눌러 주세요.';
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const here = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          pickMap.setView(here, 17);
+          setPicked(here);
+        },
+        () => { msg.textContent = '내 위치를 가져오지 못했어요. 지도를 직접 눌러 주세요.'; },
+        { enableHighAccuracy: true, timeout: 10000 },
+      );
+    });
+
+    // 전체 맛집 지도: 위치가 있는 기록을 핀으로
+    const allMap = makeMap('all-map', 13);
+    const markerLayer = L.layerGroup().addTo(allMap);
+    const markers = new Map();
+    const mapEmpty = document.getElementById('map-empty');
+    let mapFitted = false;
+
+    function renderMap() {
+      markerLayer.clearLayers();
+      markers.clear();
+      const located = items.filter(i => i.lat != null && i.lng != null);
+      for (const item of located) {
+        const pop = el('div', 'pop');
+        pop.append(el('strong', null, item.name));
+        pop.append(el('div', 'pop-stars', '★'.repeat(item.rating)));
+        if (item.menu) pop.append(el('div', 'pop-text', item.menu));
+        if (item.review) pop.append(el('div', 'pop-text', `“${item.review}”`));
+        const marker = L.marker([item.lat, item.lng], { icon: pinIcon(), title: item.name }).bindPopup(pop);
+        markerLayer.addLayer(marker);
+        markers.set(item.id, marker);
+      }
+      mapEmpty.hidden = located.length > 0;
+      // 처음 한 번만 모든 핀이 보이게 맞춘다(그 뒤엔 사용자가 옮긴 화면 유지)
+      if (located.length && !mapFitted) {
+        allMap.fitBounds(located.map(i => [i.lat, i.lng]), { padding: [40, 40], maxZoom: 16 });
+        mapFitted = true;
+      }
+    }
+
+    function showOnMap(id) {
+      const marker = markers.get(id);
+      if (!marker) return;
+      document.getElementById('map-title').scrollIntoView({ behavior: 'smooth' });
+      allMap.setView(marker.getLatLng(), 17);
+      marker.openPopup();
     }
 
     // 사장님 답글: 한줄평이 있는 기록에만. 답글은 Edge Function만 저장할 수 있다
@@ -640,6 +904,8 @@
         menu: menu || null,
         rating,
         review: review || null,
+        lat: picked ? picked.lat : null,
+        lng: picked ? picked.lng : null,
       }).select('id').single();
       submitBtn.disabled = false;
       submitBtn.textContent = '추가';
@@ -652,11 +918,39 @@
 
       form.reset();
       reviewCount.textContent = '0';
+      othersBox.hidden = true;
+      const addedPlace = picked;
+      setPicked(null);
       nameInput.focus();
       if (review) replying.add(added.id);
       await refresh();
+      // 방금 위치를 찍은 맛집은 전체 지도에서 바로 보이게
+      if (addedPlace) allMap.setView(addedPlace, Math.max(allMap.getZoom(), 15));
       if (review) requestReply(added.id);
     });
+
+    // 다른 고객님들의 의견: 함수가 찾아 준 실제 한줄평만 보여 준다(AI가 지어낸 문장은 넣지 않음)
+    const othersBox = document.getElementById('others');
+    const othersList = document.getElementById('others-list');
+
+    function showOthers(others) {
+      othersList.replaceChildren();
+      if (!Array.isArray(others)) {
+        othersBox.hidden = true;
+        return;
+      }
+      if (others.length === 0) {
+        othersList.append(el('li', 'others-empty', '아직 이 메뉴를 남긴 고객님이 없어요. 첫 후기의 주인공이 되어 주세요!'));
+      }
+      for (const o of others) {
+        const li = el('li');
+        li.append(el('span', 'o-stars', '★'.repeat(o.rating)));
+        li.append(`“${o.review}” `);
+        li.append(el('span', 'o-where', `· ${o.name}${o.menu ? ` ${o.menu}` : ''}`));
+        othersList.append(li);
+      }
+      othersBox.hidden = false;
+    }
 
     const aiBtn = document.getElementById('ai-btn');
     aiBtn.addEventListener('click', async () => {
@@ -671,7 +965,7 @@
 
       aiBtn.disabled = true;
       aiBtn.textContent = '추천 중…';
-      const { data, error } = await db.functions.invoke('suggest-review', {
+      let { data, error } = await db.functions.invoke('suggest-review', {
         body: {
           name,
           menu: menuInput.value.trim(),
@@ -680,6 +974,10 @@
       });
       aiBtn.disabled = false;
       aiBtn.textContent = '✨ AI 한줄평 추천';
+
+      // 추천 문장을 못 만들어도 다른 고객님 의견은 보여 준다
+      if (error && !data) data = await error.context?.json?.().catch(() => null);
+      showOthers(data?.others);
 
       if (error || !data?.review) {
         console.error(error);

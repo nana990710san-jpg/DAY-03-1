@@ -30,13 +30,20 @@ STEPS.md의 4단계를 순서대로 만듭니다. 각 단계를 끝내고 확인
 - **AI 한줄평:**
   - Edge Function은 `suggest-review` 하나이며, `verify_jwt`를 끕니다. `{ name, menu, rating }`를 받아 `{ review }`를 돌려줍니다.
   - `review`는 40자 이내의 한국어 한 문장입니다. 모델 응답이 길면 함수에서 잘라 맞춥니다.
+  - 함께 돌려주는 `others`는 표에 실제로 있는 다른 사람의 같은 메뉴·식당 한줄평(최대 3개)이고, 화면의 "다른 고객님들의 의견이에요!" 창에 그대로 보여 줍니다. 이 창에 AI가 만든 문장을 넣지 마세요.
+  - 모든 AI 문장은 함수의 `FRIENDLY_TONE`(친구와 수다 떨듯 쾌활한 존댓말)을 따릅니다.
   - 함수는 Supabase Secrets에 있는 `OPENROUTER_API_KEY`를 `Deno.env.get`으로 읽습니다.
-  - 모델은 `nvidia/nemotron-3-ultra-550b-a55b:free` → `google/gemma-4-26b-a4b-it:free` → `google/gemma-4-31b-it:free` 순서로 시도합니다.
+  - 기본 모델은 `nvidia/nemotron-3-ultra-550b-a55b:free`, `google/gemma-4-26b-a4b-it:free`, `google/gemma-4-31b-it:free`이고, 무료 모델이 자주 멈추거나 붐벼서 예비로 `nvidia/nemotron-3-super-120b-a12b:free`, `nvidia/nemotron-3.5-lightning:free`, `dots-studio/dots-3-note-preview:free`를 함께 씁니다(무료 모델만 사용).
+  - 여섯 모델을 **동시에** 불러 처음 온 쓸 만한 답(한글 위주, 깨진 글자 없음)을 쓰고 나머지는 끊습니다. 20초 안에 아무도 못 주면 실패로 돌려줍니다.
   - CORS `OPTIONS` 요청에 응답해야 합니다.
 - **AI 사장님 답글:**
-  - 새 함수를 만들지 않고 `suggest-review`에 `{ mode: "reply", id }` 모드로 넣었습니다. 결과는 60자 이내의 친근하고 넉살 좋은 존댓말 답글입니다.
+  - 새 함수를 만들지 않고 `suggest-review`에 `{ mode: "reply", id }` 모드로 넣었습니다. 결과는 60자 이내의 쾌활한 존댓말 답글입니다.
   - 답글은 `owner_reply` 칸에 저장합니다. 사용자는 이 칸을 쓸 수 없고(추가 정책에 `owner_reply is null`, 수정 권한 없음), 함수가 service role로 비어 있을 때만 한 번 채웁니다.
   - 화면은 한줄평이 있는 기록을 추가하면 자동으로 답글을 요청합니다. 실패하면 글쓴이 카드에 [사장님 답글 받기] 버튼이 남습니다.
+- **위치·지도:**
+  - `lat`·`lng`(선택) 칸에 위치를 저장합니다. 표의 CHECK로 둘 다 비었거나 올바른 범위일 때만 받습니다.
+  - 지도는 Leaflet(cdnjs) + OpenStreetMap 타일로, 키가 필요 없습니다. 입력 폼의 `pick-map`에서 눌러 위치를 찍고, `all-map`에 위치가 있는 모든 기록을 핀으로 보여 줍니다.
+  - 핀·팝업 내용은 `textContent`로 만들어 사용자 글이 HTML로 해석되지 않게 합니다.
 - **화면 코드에 넣는 키:** 화면 코드에는 Supabase URL과 anon(publishable) 키만 넣습니다.
 
 ## 하지 않을 것

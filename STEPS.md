@@ -64,9 +64,10 @@
    - `OPTIONS` 요청에 CORS 헤더로 응답
    - 입력 `{ name, menu, rating }` 검증 (이름 필수·길이 규칙)
    - `Deno.env.get("OPENROUTER_API_KEY")`로 키 읽기 (Secrets에 이미 있음, 코드에 넣지 않기)
-   - OpenRouter 호출, 모델 순서대로 시도:
-     `nvidia/nemotron-3-ultra-550b-a55b:free` → `google/gemma-4-26b-a4b-it:free` → `google/gemma-4-31b-it:free`
+   - OpenRouter 호출:
+     `nvidia/nemotron-3-ultra-550b-a55b:free`, `google/gemma-4-26b-a4b-it:free`, `google/gemma-4-31b-it:free` + 예비 무료 모델 3개를 동시에 불러 처음 온 쓸 만한 답 사용(20초 제한)
    - 응답 정리: 따옴표·공백 제거, 첫 문장만, 40자 초과 시 자르기
+   - 같은 메뉴·식당의 실제 한줄평(최대 3개)을 `others`로 함께 돌려주고, 화면에 "다른 고객님들의 의견이에요!" 창으로 표시
    - `{ review }` 반환
 3. 배포 후 curl로 함수 단독 테스트
 4. `index.html`에 [AI 추천] 버튼 연결
@@ -79,13 +80,23 @@
 
 1. 표에 `owner_reply text` 칸 추가 (100자 이하 CHECK), 추가(insert) 정책에 `owner_reply is null` 조건 추가
 2. 같은 함수 `suggest-review`에 `{ mode: "reply", id }` 모드 추가
-   - service role로 기록을 읽어 60자 이내의 친근하고 넉살 좋은 존댓말 답글 생성, `owner_reply`가 비어 있을 때만 저장
+   - service role로 기록을 읽어 60자 이내의 쾌활한 존댓말 답글 생성, `owner_reply`가 비어 있을 때만 저장
 3. `index.html`
    - 한줄평이 있는 기록을 추가하면 자동으로 답글 요청, 그동안 "사장님이 답글을 쓰는 중…"
    - 카드 한줄평 아래에 "사장님 답글" 표시
    - 실패하면 내 카드에 [사장님 답글 받기] 버튼
 
 **확인:** 한줄평을 넣고 추가 → 잠시 뒤 답글이 달림 / 다른 브라우저에서도 같은 답글이 보임 / 사용자가 API로 `owner_reply`를 직접 쓰면 거부됨
+
+### 3-3. 위치와 맛집 지도 (추가 기능)
+
+1. 표에 `lat`·`lng`(선택) 칸 추가, 둘 다 비었거나 올바른 범위일 때만 받는 CHECK
+2. `index.html`에 Leaflet(cdnjs) + OpenStreetMap 지도 두 개
+   - 입력 폼: 지도를 눌러 위치 찍기, [📍 내 위치로], [위치 지우기]
+   - "맛집 지도": 위치가 있는 모든 기록을 주황 핀으로, 핀을 누르면 이름·별점·메뉴·한줄평
+   - 카드: 위치가 있으면 [📍 지도에서 보기]
+
+**확인:** 위치를 찍고 추가 → 맛집 지도에 핀이 생김 / [지도에서 보기]로 그 핀이 열림 / 위도 95 같은 값은 표에서 거부됨 / 휴대폰 폭에서 가로 스크롤 없음
 
 ---
 
