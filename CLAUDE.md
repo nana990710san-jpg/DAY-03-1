@@ -34,9 +34,9 @@ STEPS.md의 4단계를 순서대로 만듭니다. 각 단계를 끝내고 확인
   - 모델은 `nvidia/nemotron-3-ultra-550b-a55b:free` → `google/gemma-4-26b-a4b-it:free` → `google/gemma-4-31b-it:free` 순서로 시도합니다.
   - CORS `OPTIONS` 요청에 응답해야 합니다.
 - **AI 사장님 답글:**
-  - 새 함수를 만들지 않고 `suggest-review`에 `{ mode: "reply", id }` 모드로 넣었습니다. 결과는 60자 이내 존댓말 답글입니다.
+  - 새 함수를 만들지 않고 `suggest-review`에 `{ mode: "reply", id }` 모드로 넣었습니다. 결과는 60자 이내의 친근하고 넉살 좋은 존댓말 답글입니다.
   - 답글은 `owner_reply` 칸에 저장합니다. 사용자는 이 칸을 쓸 수 없고(추가 정책에 `owner_reply is null`, 수정 권한 없음), 함수가 service role로 비어 있을 때만 한 번 채웁니다.
-  - 화면은 한줄평이 있는 기록을 추가하면 자동으로 답글을 요청합니다. 실패하면 글쓴이 카드에 [AI 사장님 답글 받기] 버튼이 남습니다.
+  - 화면은 한줄평이 있는 기록을 추가하면 자동으로 답글을 요청합니다. 실패하면 글쓴이 카드에 [사장님 답글 받기] 버튼이 남습니다.
 - **화면 코드에 넣는 키:** 화면 코드에는 Supabase URL과 anon(publishable) 키만 넣습니다.
 
 ## 하지 않을 것

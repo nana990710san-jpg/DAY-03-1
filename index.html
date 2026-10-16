@@ -431,7 +431,7 @@
       if (!item.review) return null;
       const box = el('div', 'reply');
       if (item.owner_reply) {
-        box.append(el('span', 'reply-label', '사장님 답글 · AI'));
+        box.append(el('span', 'reply-label', '사장님 답글'));
         box.append(el('p', 'reply-text', item.owner_reply));
         return box;
       }
@@ -442,7 +442,7 @@
       }
       if (item.user_id !== myId) return null;
       box.classList.add('reply-pending');
-      const btn = el('button', 'reply-btn', 'AI 사장님 답글 받기');
+      const btn = el('button', 'reply-btn', '사장님 답글 받기');
       btn.type = 'button';
       btn.addEventListener('click', () => requestReply(item.id));
       box.append(btn);
