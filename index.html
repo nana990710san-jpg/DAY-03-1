@@ -206,6 +206,45 @@
       margin: 10px 0 0;
       word-break: break-all;
     }
+    .reply {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-left: 3px solid var(--orange);
+      border-radius: 0 10px 10px 0;
+      background: var(--orange-soft);
+    }
+    .reply-pending {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .reply-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--orange-dark);
+    }
+    .reply-text {
+      margin: 4px 0 0;
+      font-size: 14px;
+      word-break: break-all;
+    }
+    .reply-btn {
+      height: 32px;
+      padding: 0 12px;
+      border: 1px solid var(--orange);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--orange-dark);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .reply-error {
+      font-size: 12px;
+      color: var(--error);
+    }
     .item-foot {
       display: flex;
       justify-content: space-between;
@@ -367,6 +406,8 @@
 
         if (item.menu) li.append(el('span', 'item-menu', item.menu));
         if (item.review) li.append(el('p', 'item-review', `“${item.review}”`));
+        const reply = renderReply(item);
+        if (reply) li.append(reply);
 
         const foot = el('div', 'item-foot');
         foot.append(el('span', null, formatDate(item.created_at)));
@@ -380,6 +421,46 @@
 
         list.append(li);
       }
+    }
+
+    // 사장님 답글: 한줄평이 있는 기록에만. 답글은 Edge Function만 저장할 수 있다
+    const replying = new Set();
+    const replyFailed = new Set();
+
+    function renderReply(item) {
+      if (!item.review) return null;
+      const box = el('div', 'reply');
+      if (item.owner_reply) {
+        box.append(el('span', 'reply-label', '사장님 답글 · AI'));
+        box.append(el('p', 'reply-text', item.owner_reply));
+        return box;
+      }
+      if (replying.has(item.id)) {
+        box.classList.add('reply-pending');
+        box.append(el('span', 'reply-label', '사장님이 답글을 쓰는 중…'));
+        return box;
+      }
+      if (item.user_id !== myId) return null;
+      box.classList.add('reply-pending');
+      const btn = el('button', 'reply-btn', 'AI 사장님 답글 받기');
+      btn.type = 'button';
+      btn.addEventListener('click', () => requestReply(item.id));
+      box.append(btn);
+      if (replyFailed.has(item.id)) box.append(el('span', 'reply-error', '답글을 받지 못했어요. 다시 눌러 주세요.'));
+      return box;
+    }
+
+    async function requestReply(id) {
+      replying.add(id);
+      replyFailed.delete(id);
+      render();
+      const { data, error } = await db.functions.invoke('suggest-review', { body: { mode: 'reply', id } });
+      replying.delete(id);
+      if (error || !data?.reply) {
+        console.error(error);
+        replyFailed.add(id);
+      }
+      await refresh();
     }
 
     async function removeItem(id, name, button) {
@@ -426,12 +507,12 @@
 
       submitBtn.disabled = true;
       submitBtn.textContent = '추가 중…';
-      const { error } = await db.from('restaurants').insert({
+      const { data: added, error } = await db.from('restaurants').insert({
         name,
         menu: menu || null,
         rating,
         review: review || null,
-      });
+      }).select('id').single();
       submitBtn.disabled = false;
       submitBtn.textContent = '추가';
 
@@ -443,8 +524,10 @@
 
       form.reset();
       reviewCount.textContent = '0';
-      await refresh();
       nameInput.focus();
+      if (review) replying.add(added.id);
+      await refresh();
+      if (review) requestReply(added.id);
     });
 
     const aiBtn = document.getElementById('ai-btn');

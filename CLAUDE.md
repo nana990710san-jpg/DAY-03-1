@@ -4,7 +4,7 @@
 
 ## 프로젝트 상태
 
-아직은 문서만 있습니다. [PRD.md](PRD.md)(요구사항)와 [STEPS.md](STEPS.md)(만들 순서)가 기준이므로, 무엇이든 바꾸기 전에 먼저 읽으세요. 화면에 보이는 글자는 한국어로 씁니다.
+1~3단계가 끝났습니다(`index.html`, `supabase/functions/suggest-review/index.ts`). [PRD.md](PRD.md)(요구사항)와 [STEPS.md](STEPS.md)(만들 순서)가 기준이므로, 무엇이든 바꾸기 전에 먼저 읽으세요. 화면에 보이는 글자는 한국어로 씁니다.
 
 앱 이름은 "우리 동네 숨은 맛집"이며, 동네 맛집을 기록하고 함께 보는 한 페이지짜리 웹앱입니다.
 
@@ -33,6 +33,10 @@ STEPS.md의 4단계를 순서대로 만듭니다. 각 단계를 끝내고 확인
   - 함수는 Supabase Secrets에 있는 `OPENROUTER_API_KEY`를 `Deno.env.get`으로 읽습니다.
   - 모델은 `nvidia/nemotron-3-ultra-550b-a55b:free` → `google/gemma-4-26b-a4b-it:free` → `google/gemma-4-31b-it:free` 순서로 시도합니다.
   - CORS `OPTIONS` 요청에 응답해야 합니다.
+- **AI 사장님 답글:**
+  - 새 함수를 만들지 않고 `suggest-review`에 `{ mode: "reply", id }` 모드로 넣었습니다. 결과는 60자 이내 존댓말 답글입니다.
+  - 답글은 `owner_reply` 칸에 저장합니다. 사용자는 이 칸을 쓸 수 없고(추가 정책에 `owner_reply is null`, 수정 권한 없음), 함수가 service role로 비어 있을 때만 한 번 채웁니다.
+  - 화면은 한줄평이 있는 기록을 추가하면 자동으로 답글을 요청합니다. 실패하면 글쓴이 카드에 [AI 사장님 답글 받기] 버튼이 남습니다.
 - **화면 코드에 넣는 키:** 화면 코드에는 Supabase URL과 anon(publishable) 키만 넣습니다.
 
 ## 하지 않을 것
